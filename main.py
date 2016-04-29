@@ -8,7 +8,8 @@ import time
 import numpy as np
 #For concurrent call to the sensors
 from threading import Thread
-
+#The pigpio library
+import pigpio
 #For cls
 import os
 
