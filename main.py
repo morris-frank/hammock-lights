@@ -169,7 +169,7 @@ class Hammock:
         print self.sdft.freqs
 
 
-def __main__():
+if __name__ == "__main__":
     print '#1'
     sensors = SensorVector()
     print '#2'
