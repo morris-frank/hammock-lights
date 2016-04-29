@@ -50,7 +50,7 @@ class DistSensor:
         pi.set_mode(trigger, pigpio.OUTPUT)
 
     def measure(self):
-        print name
+        print self.name
         pi.write(self.trigger, 1)
         time.sleep(0.00001)
         pi.write(self.trigger, 0)
