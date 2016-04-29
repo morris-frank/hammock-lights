@@ -132,6 +132,7 @@ class SensorVector:
             self.movingAverages[sensor].append(latest[sensor][1])
             if latest[sensor][1] != 0:
                 overallMeasure += latest[sensor][1] - self.movingAverages[sensor].average
+                print overallMeasure
                 overallTime += latest[sensor][0]
                 usedSensors += 1
         if usedSensors == 0:
