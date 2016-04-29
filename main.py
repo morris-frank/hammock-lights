@@ -128,7 +128,7 @@ class SDFT:
         self.measures = np.zeros(DFTSIZE)
         self.coeffs = np.zeros(DFTSIZE, dtype=np.complex)
         self.index = 0
-        initCoeffs()
+        self.initCoeffs()
 
     def initCoeffs(self):
         for i in range(DFTSIZE):
