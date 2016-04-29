@@ -101,6 +101,7 @@ class SensorVector:
         latest[name] = (0.0, 0.0)
 
     def measure(self):
+        print "lets measure"
         overallMeasure = 0.0
         overallTime = 0
         usedSensors = 0
@@ -162,9 +163,10 @@ class Hammock:
             time.sleep(TRIGTIME)
 
     def iter(self):
+        print "Iter..."
         self.sdft.append(self.sensors.measure())
         clear()
-        print(self.sdft.freqs)
+        print self.sdft.freqs
 
 
 def __main__():
@@ -172,7 +174,6 @@ def __main__():
     sensors.append('BACK', DistSensor('BACK', 24, 18))
     sensors.append('FRONT', DistSensor('FRONT', 16, 26))
     hammock = Hammock(sensors)
-
     hammock.start()
 
 
