@@ -60,7 +60,7 @@ class DistSensor:
         while pi.read(self.echo) == 0:
             start = time.time()
 
-        while pi.read(self.echo) == 1;
+        while pi.read(self.echo) == 1:
             end = time.time()
 
         timeDelta = end - start
