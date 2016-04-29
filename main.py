@@ -51,7 +51,7 @@ class DistSensor:
 
     def measure(self):
         pi.write(self.trigger, 1)
-        tim.sleep(0.00001)
+        time.sleep(0.00001)
         pi.write(self.trigger, 0)
 
         start = time.time()
