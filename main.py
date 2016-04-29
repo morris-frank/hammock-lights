@@ -50,6 +50,7 @@ class DistSensor:
         pi.set_mode(trigger, pigpio.OUTPUT)
 
     def measure(self):
+        print name
         pi.write(self.trigger, 1)
         time.sleep(0.00001)
         pi.write(self.trigger, 0)
@@ -101,7 +102,6 @@ class SensorVector:
         latest[name] = (0.0, 0.0)
 
     def measure(self):
-        print "lets measure"
         overallMeasure = 0.0
         overallTime = 0
         usedSensors = 0
@@ -163,22 +163,16 @@ class Hammock:
             time.sleep(TRIGTIME)
 
     def iter(self):
-        print "Iter..."
         self.sdft.append(self.sensors.measure())
         clear()
         print self.sdft.freqs
 
 
 if __name__ == "__main__":
-    print '#1'
     sensors = SensorVector()
-    print '#2'
     sensors.append('BACK', DistSensor('BACK', 24, 18))
-    print '#3'
     sensors.append('FRONT', DistSensor('FRONT', 16, 26))
-    print '#4'
     hammock = Hammock(sensors)
-    print '#5'
     hammock.start()
 
 
