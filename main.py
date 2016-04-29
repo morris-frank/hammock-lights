@@ -144,7 +144,7 @@ class SDFT:
         for i in range(DFTSIZE):
             freqs[i] += delta * self.coeffs[ci]
             ci += self.index
-            if ci >= DFTSIZE
+            if ci >= DFTSIZE:
                 ci -= DFTSIZE
         self.index += 1
         if self.index == DFTSIZE:
