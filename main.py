@@ -173,6 +173,8 @@ def __main__():
     sensors.append('FRONT', DistSensor('FRONT', 16, 26))
     hammock = Hammock(sensors)
 
+    hammock.start()
+
 
 
 
