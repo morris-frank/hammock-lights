@@ -170,7 +170,7 @@ class Hammock:
 def __main__():
     sensors = SensorVector()
     sensors.append('BACK', DistSensor('BACK', 24, 18))
-    sensors.append('FRONT', DistSensor(,'FRONT', 16, 26))
+    sensors.append('FRONT', DistSensor('FRONT', 16, 26))
     hammock = Hammock(sensors)
 
 
