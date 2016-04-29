@@ -14,7 +14,7 @@ import pigpio
 import os
 
 #Number of elements in the moving average
-MASIZE = 30
+MASIZE = 300
 
 #Number of elements in the sliding distinct fourier transformation
 DFTSIZE = 2**8
@@ -23,7 +23,7 @@ DFTSIZE = 2**8
 GRIDDIST = 30
 
 #Time between triggers in ms
-TRIGTIME = 200
+TRIGTIME = 100
 
 #The raspberry to use
 pi = pigpio.pi()
@@ -33,11 +33,15 @@ latest = dict()
 
 #------------------------------------------------------------------------------
 
-clear = lambda: os.system('cls')
+clear = lambda: os.system('clear')
 
 def LinearInterpolation(leftTime, rightTime, leftMeasure, rightMeasure):
-    slope = (rightMeasure - leftMeasure) / (rightTime - leftTime)
-    return GRIDDIST * slope + leftMeasure
+    if rightTime > leftTime:
+        slope = (rightMeasure - leftMeasure) / (rightTime - leftTime)
+        return GRIDDIST * slope + leftMeasure
+    else:
+        print "iterError"
+        return rightMeasure
 
 
 class DistSensor:
@@ -50,7 +54,6 @@ class DistSensor:
         pi.set_mode(trigger, pigpio.OUTPUT)
 
     def measure(self):
-        print self.name
         pi.write(self.trigger, 1)
         time.sleep(0.00001)
         pi.write(self.trigger, 0)
@@ -58,8 +61,14 @@ class DistSensor:
         start = time.time()
         end = time.time()
 
-        while pi.read(self.echo) == 0:
+        hi = 0
+        while pi.read(self.echo) == 0 and hi < 20:
             start = time.time()
+            hi += 1
+
+        if hi >= 20:
+            latest[self.name] = (int(0), 0)
+            return False
 
         while pi.read(self.echo) == 1:
             end = time.time()
@@ -70,25 +79,35 @@ class DistSensor:
         #The estimated time point of the measurement
         measureTime = (start + end) / 2
 
-        latest[self.name]= (int(measureTime), dist)
+        latest[self.name]= (measureTime, dist)
         return latest[self.name]
 
 
-class MovingAverage(deque):
+class MovingAverage:
     """MovingAverage is self explanatory"""
-    def __init__(self, *args):
-        deque.__init__(self, [], MASIZE)
+    def __init__(self):
+        self.data = np.zeros(MASIZE)
+        self.idx = 0
+        self.n = 0
         self.average = 0.0
 
     def append(self, pnt):
-        n = len(self)
-        if n == MASIZE:
-            self.average -= deque.popleft(self) / MASIZE
-            self.average += float(pnt) / MASIZE
+        if self.n == MASIZE:
+            self.average += float(pnt) / MASIZE - self.data[self.idx] / MASIZE
+            self.data[self.idx] = float(pnt)
+            self.idx += 1
+            if self.idx == MASIZE:
+                self.idx = 0
         else:
-            self.average *= float(n) / (n + 1)
-            self.average += float(pnt) / (n + 1)
-        deque.append(self, append)
+            if self.n > 0:
+                self.average -= self.data[self.idx] / self.n
+                self.average *= float(self.n) / (self.n + 1)
+            self.average += float(pnt) / (self.n + 1)
+            self.data[self.idx] = float(pnt)
+            self.idx += 1
+            self.n += 1
+            if self.idx == MASIZE:
+                self.idx = 0
 
 
 class SensorVector:
@@ -105,7 +124,7 @@ class SensorVector:
         overallMeasure = 0.0
         overallTime = 0
         usedSensors = 0
-        threads = [Thread(target=self.sensorList[name].measure(), args=())
+        threads = [Thread(target=self.sensorList[name].measure, args=())
                         for name in self.sensorList]
         _ = [t.start() for t in threads]
         _ = [t.join() for t in threads]
@@ -115,6 +134,8 @@ class SensorVector:
                 overallMeasure += latest[sensor][1] - self.movingAverages[sensor].average
                 overallTime += latest[sensor][0]
                 usedSensors += 1
+        if usedSensors == 0:
+            return (0, 0)
         return (overallTime/usedSensors, overallMeasure/usedSensors)
 
 
@@ -124,7 +145,7 @@ class SDFT:
         self.newestMeasure = 0
         self.oldestMeasure = 0
         self.interpolFunc = interpolFunc
-        self.freqs = np.zeros(DFTSIZE + 1)
+        self.freqs = np.zeros(DFTSIZE + 1, dtype=np.complex)
         self.measures = np.zeros(DFTSIZE)
         self.coeffs = np.zeros(DFTSIZE, dtype=np.complex)
         self.index = 0
@@ -136,14 +157,19 @@ class SDFT:
             self.coeffs[i] = complex(np.cos(a), np.sin(a))
 
     def append(self, measure):
+        if (measure == (0,0)):
+            return False
         interMeasure = self.interpolFunc(self.newestMeasureTime, measure[0],
                                                        self.newestMeasure, measure[1])
-        self.measures[self.index + 1]  = self.newestMeasure = measure[1]
+        if self.index + 1 == DFTSIZE:
+            self.measures[0]  = self.newestMeasure = measure[1]
+        else:
+            self.measures[self.index + 1]  = self.newestMeasure = measure[1]
         self.newestMeasureTime = measure[0]
         delta = complex(self.newestMeasure - self.measures[self.index])
         ci = 0
         for i in range(DFTSIZE):
-            freqs[i] += delta * self.coeffs[ci]
+            self.freqs[i] += delta * self.coeffs[ci]
             ci += self.index
             if ci >= DFTSIZE:
                 ci -= DFTSIZE
@@ -158,14 +184,14 @@ class Hammock:
         self.sensors = sensors
 
     def start(self):
-        while True:
+        for i in range(1000):
             self.iter()
-            time.sleep(TRIGTIME)
+            time.sleep(float(TRIGTIME)/1000)
 
     def iter(self):
         self.sdft.append(self.sensors.measure())
-        clear()
-        print self.sdft.freqs
+        #clear()
+        #print max([f.real for f in self.sdft.freqs])
 
 
 if __name__ == "__main__":
